@@ -9,7 +9,11 @@
 import Cocoa
 
 class Tinypng {
-
+    
+    private let logFile = (Bundle.main.resourcePath ?? "") + "/slim.log"
+    private let tinyedFile = (Bundle.main.resourcePath ?? "") + "/tinyed.log"
+    private var tinyedFiles: [String] = []
+    
     private let semaphore = DispatchSemaphore(value: 0)
     
     private let keys: [String] = [
@@ -17,25 +21,38 @@ class Tinypng {
         "bpq1e1MlgfxkpUgibf9xEeubyeO1ntrYi",
         "w0g132zBMeZwsKWtaYoVxnSSb1u4Zfqz5",
         "VJO1Aiu0H6EdLQhGHAsNd5WTI6zeoPRi1",
-        "Tnl1vhHbyYxnOZCj8oHmdvCPcuDUbcf0d"
+        "Tnl1vhHbyYxnOZCj8oHmdvCPcuDUbcf0d",
+        "kaK1IRDXUQpAZeEL6KbGEjO8HAeqTQBhA"
     ]
     private var keyIndex: Int = 0
     
     private var failedFiles: [String] = []
     
+    init() {
+        if FileManager.default.fileExists(atPath: tinyedFile), let handler = FileHandle(forReadingAtPath: tinyedFile) {
+            let data = handler.readDataToEndOfFile()
+            let log = NSString(data: data, encoding: String.Encoding.utf8.rawValue)
+            tinyedFiles = log?.components(separatedBy: "\n") ?? []
+            handler.closeFile()
+        }
+    }
+    
     func start(dir: String) {
         print("启动资源压缩，正在扫描目录...")
-        var list: [String] = []
-        var count: Int = 0
-        FileHelper.shared.fetchAllPNGs(with: dir, list: &list, count: &count)
-        if list.count == 0 {
-            print("扫描到\(count)个文件，发现\(list.count)个PNG图片，目录<\(dir)>")
+        
+        let result = Sort().fetchSorted(dir: dir)
+        if result.files.count == 0 {
+            print("发现\(result.files.count)个图片，目录<\(dir)>")
             return
         }
-        print("扫描到\(count)个文件，发现\(list.count)个PNG图片，开始连接Tinypng")
+        print("\(result.files.count)个图片排序完成，开始连接Tinypng")
         
-        list.enumerated().forEach { (offset, file) in
-            let progress = Double(offset + 1) * 10000 / Double(list.count) / 100.0
+        result.files.enumerated().forEach { (offset, file) in
+            guard !tinyedFiles.contains(file) else {
+                print("\(file)已压缩，跳过...")
+                return
+            }
+            let progress = Double(offset + 1) * 10000 / Double(result.files.count) / 100.0
             if keyIndex < keys.count {
                 let key = "api:" + keys[keyIndex]
                 let keyData = key.data(using: String.Encoding.utf8)
@@ -49,9 +66,11 @@ class Tinypng {
             
         }
         
-        let progress = Double(list.count - failedFiles.count) * 10000 / Double(list.count) / 100
+        let progress = Double(result.files.count - failedFiles.count) * 10000 / Double(result.files.count) / 100
         let log = String(format: "所有图片压缩完毕，成功率：%.2f%%", progress)
         print("\(log)")
+        
+        self.tinyed()
     }
     
     private func upload(file: String, with key: String, progress: Double) {
@@ -89,6 +108,9 @@ class Tinypng {
                     }
                     
                     try? data?.write(to: fileUrl, options: .atomic)
+                    
+                    self.tinyedFiles.append(file)
+                    
                     print("\(file) 压缩成功 \(progressString)\n", terminator: "")
                 })
                 taskCompress.resume()
@@ -101,5 +123,15 @@ class Tinypng {
             }
         })
         task.resume()
+    }
+    
+    private func tinyed() {
+        let log = self.tinyedFiles.joined(separator: "\n")
+        
+        if !FileManager.default.fileExists(atPath: tinyedFile) {
+            FileManager.default.createFile(atPath: tinyedFile, contents: log.data(using: String.Encoding.utf8), attributes: nil)
+        } else {
+            try? log.write(toFile: tinyedFile, atomically: true, encoding: String.Encoding.utf8)
+        }
     }
 }

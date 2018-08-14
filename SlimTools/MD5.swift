@@ -25,12 +25,12 @@ class MD5 {
         var count: Int = 0
         FileHelper.shared.fetchAllPNGs(with: dir, list: &list, count: &count)
         if list.count == 0 {
-            print("扫描到\(count)个文件，发现\(list.count)个PNG图片，目录<\(dir)>")
-            logs.append("扫描到\(count)个文件，发现\(list.count)个PNG图片，目录<\(dir)>\n")
+            print("扫描到\(count)个文件，发现\(list.count)个图片，目录<\(dir)>")
+            logs.append("扫描到\(count)个文件，发现\(list.count)个图片，目录<\(dir)>\n")
             return
         }
-        print("扫描到\(count)个文件，发现\(list.count)个PNG图片，开始分析MD5...")
-        logs.append("扫描到\(count)个文件，发现\(list.count)个PNG图片，开始分析MD5...\n")
+        print("扫描到\(count)个文件，发现\(list.count)个图片，开始分析MD5...")
+        logs.append("扫描到\(count)个文件，发现\(list.count)个图片，开始分析MD5...\n")
         
         var dicFiles: [String: [String]] = [:]
         var duplicateMD5: Set<String> = []

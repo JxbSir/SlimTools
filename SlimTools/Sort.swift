@@ -12,6 +12,8 @@ private let sizeOfG: Double = 1000 * 1000 * 1000
 private let sizeOfM: Double = 1000 * 1000
 private let sizeOfK: Double = 1000
 
+typealias SortResult = (files: [String], sizeMap: [String: Double])
+
 class Sort {
     private let logFile = (Bundle.main.resourcePath ?? "") + "/slim.log"
     
@@ -24,36 +26,11 @@ class Sort {
         
         print("启动资源文件排序检测，正在扫描目录...")
         logs.append("启动资源文件排序检测，正在扫描目录...\n")
-        var list: [String] = []
-        var count: Int = 0
-        FileHelper.shared.fetchAllPNGs(with: dir, list: &list, count: &count)
-        if list.count == 0 {
-            print("扫描到\(count)个文件，发现\(list.count)个PNG图片，目录<\(dir)>")
-            logs.append("扫描到\(count)个文件，发现\(list.count)个PNG图片，目录<\(dir)>\n")
-            return
-        }
-        print("扫描到\(count)个文件，发现\(list.count)个PNG图片，开始排序...")
-        logs.append("扫描到\(count)个文件，发现\(list.count)个PNG图片，开始排序...\n")
         
-        var dicFileAttr: [String: Double] = [:]
+        let result = fetchSorted(dir: dir)
         
-        let results = list.sorted { (file1, file2) -> Bool in
-            guard let attr1 = try? FileManager.default.attributesOfItem(atPath: file1),
-                let attr2 = try? FileManager.default.attributesOfItem(atPath: file2),
-                let size1 = attr1[FileAttributeKey.size] as? NSNumber,
-                let size2 = attr2[FileAttributeKey.size] as? NSNumber else {
-                return false
-            }
-            
-            dicFileAttr.updateValue(size1.doubleValue, forKey: file1)
-            dicFileAttr.updateValue(size2.doubleValue, forKey: file2)
-  
-            return size1.doubleValue > size2.doubleValue
-            
-        }
-        
-        results.forEach { (file) in
-            if let size = dicFileAttr[file] {
+        result.files.forEach { (file) in
+            if let size = result.sizeMap[file] {
                 logs.append("\(getSizeString(size))    \(file)\n")
             } else {
                 logs.append("unknown    \(file)\n")
@@ -68,6 +45,38 @@ class Sort {
             try? logs.write(toFile: logFile, atomically: true, encoding: 0)
         }
         
+    }
+    
+    func fetchSorted(dir: String) -> SortResult {
+        var list: [String] = []
+        var count: Int = 0
+        FileHelper.shared.fetchAllPNGs(with: dir, list: &list, count: &count)
+        if list.count == 0 {
+            print("扫描到\(count)个文件，发现\(list.count)个图片，目录<\(dir)>")
+            logs.append("扫描到\(count)个文件，发现\(list.count)个图片，目录<\(dir)>\n")
+            return ([], [:])
+        }
+        print("扫描到\(count)个文件，发现\(list.count)个图片，开始排序...")
+        logs.append("扫描到\(count)个文件，发现\(list.count)个图片，开始排序...\n")
+        
+        var dicFileAttr: [String: Double] = [:]
+        
+        let results = list.sorted { (file1, file2) -> Bool in
+            guard let attr1 = try? FileManager.default.attributesOfItem(atPath: file1),
+                let attr2 = try? FileManager.default.attributesOfItem(atPath: file2),
+                let size1 = attr1[FileAttributeKey.size] as? NSNumber,
+                let size2 = attr2[FileAttributeKey.size] as? NSNumber else {
+                    return false
+            }
+            
+            dicFileAttr.updateValue(size1.doubleValue, forKey: file1)
+            dicFileAttr.updateValue(size2.doubleValue, forKey: file2)
+            
+            return size1.doubleValue > size2.doubleValue
+            
+        }
+        
+        return (results, dicFileAttr)
     }
     
     private func getSizeString(_ size: Double) -> String {
