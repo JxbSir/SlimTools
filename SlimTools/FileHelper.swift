@@ -25,6 +25,9 @@ class FileHelper {
         
         if let dirArray = try? fileManager.contentsOfDirectory(atPath: path) {
             dirArray.forEach { (name) in
+                guard name.lowercased() != "carthage", name.lowercased() != "pods", name.lowercased() != "qiyu" else {
+                    return
+                }
                 let subpath = "\(path)/\(name)"
                 var issubDir: ObjCBool = false
                 if fileManager.fileExists(atPath: subpath, isDirectory: &issubDir), issubDir.boolValue {
@@ -34,7 +37,8 @@ class FileHelper {
                     let log = "已扫描\(count)个文件\r"
                     print("\(log) \r", terminator: "")
                     
-                    if URL(fileURLWithPath: path).appendingPathComponent(name).pathExtension.lowercased() == "png" {
+                    let ext = URL(fileURLWithPath: path).appendingPathComponent(name).pathExtension.lowercased()
+                    if ext == "png" || ext == "jpg" {
                         list.append(subpath)
                     }
                 }

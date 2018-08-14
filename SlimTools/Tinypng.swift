@@ -13,7 +13,11 @@ class Tinypng {
     private let semaphore = DispatchSemaphore(value: 0)
     
     private let keys: [String] = [
-        "hKlIWkcV9gY9bW0p0FYykuEOEsyj34i8"
+        "jmU13Fw2fK6NfO92B2t82w6mMfirxK1mj",
+        "bpq1e1MlgfxkpUgibf9xEeubyeO1ntrYi",
+        "w0g132zBMeZwsKWtaYoVxnSSb1u4Zfqz5",
+        "VJO1Aiu0H6EdLQhGHAsNd5WTI6zeoPRi1",
+        "Tnl1vhHbyYxnOZCj8oHmdvCPcuDUbcf0d"
     ]
     private var keyIndex: Int = 0
     

@@ -11,6 +11,8 @@
 		D05A981F211C10FC00050311 /* FileHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = D05A981E211C10FC00050311 /* FileHelper.swift */; };
 		D05A9822211C26D400050311 /* MD5.swift in Sources */ = {isa = PBXBuildFile; fileRef = D05A9821211C26D400050311 /* MD5.swift */; };
 		D05A9824211C32AB00050311 /* Tinypng.swift in Sources */ = {isa = PBXBuildFile; fileRef = D05A9823211C32AB00050311 /* Tinypng.swift */; };
+		D0B6992C21226B740003D38B /* FileManager+.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B6992B21226B740003D38B /* FileManager+.swift */; };
+		D0B699302122C90E0003D38B /* Sort.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B6992F2122C90E0003D38B /* Sort.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -32,6 +34,8 @@
 		D05A9820211C264D00050311 /* Bridging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Bridging.h; sourceTree = "<group>"; };
 		D05A9821211C26D400050311 /* MD5.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MD5.swift; sourceTree = "<group>"; };
 		D05A9823211C32AB00050311 /* Tinypng.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tinypng.swift; sourceTree = "<group>"; };
+		D0B6992B21226B740003D38B /* FileManager+.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FileManager+.swift"; sourceTree = "<group>"; };
+		D0B6992F2122C90E0003D38B /* Sort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sort.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +73,8 @@
 				D05A981E211C10FC00050311 /* FileHelper.swift */,
 				D05A9821211C26D400050311 /* MD5.swift */,
 				D05A9823211C32AB00050311 /* Tinypng.swift */,
+				D0B6992F2122C90E0003D38B /* Sort.swift */,
+				D0B6992B21226B740003D38B /* FileManager+.swift */,
 			);
 			path = SlimTools;
 			sourceTree = "<group>";
@@ -130,10 +136,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D0B6992C21226B740003D38B /* FileManager+.swift in Sources */,
 				D05A9818211C0B1D00050311 /* main.swift in Sources */,
 				D05A9824211C32AB00050311 /* Tinypng.swift in Sources */,
 				D05A981F211C10FC00050311 /* FileHelper.swift in Sources */,
 				D05A9822211C26D400050311 /* MD5.swift in Sources */,
+				D0B699302122C90E0003D38B /* Sort.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

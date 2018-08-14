@@ -11,12 +11,13 @@ import Foundation
 enum Mode: String {
     case md5  = "1"
     case tiny = "2"
+    case sort = "3"
 }
 
 var mode: Mode?
 
 repeat {
-    print("请选择模式:\n1:查找重复资源文件\n2:使用Tinypng进行压缩\nq:退出")
+    print("请选择模式:\n1:查找重复资源文件\n2:使用Tinypng进行压缩\n3:资源文件排序\nq:退出")
     
     if let m = readLine()?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines) {
         if let _m = Mode(rawValue: m) {
@@ -40,6 +41,9 @@ if let m = mode, let dir = readLine()?.trimmingCharacters(in: CharacterSet.white
         let tinypng = Tinypng()
         tinypng.start(dir: dir)
         
+    case .sort:
+        let sort = Sort()
+        sort.start(dir: dir)
     }
 }
 
