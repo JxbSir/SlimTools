@@ -17,6 +17,7 @@ class Tinypng {
     
     private let semaphore = DispatchSemaphore(value: 0)
     
+    //must use your api key of tinypng
     private let keys: [String] = [
         "jmU13Fw2fK6NfO92B2t82w6mMfirxK1mj",
         "bpq1e1MlgfxkpUgibf9xEeubyeO1ntrYi",
@@ -45,20 +46,35 @@ class Tinypng {
             print("发现\(result.files.count)个图片，目录<\(dir)>")
             return
         }
-        print("\(result.files.count)个图片排序完成，开始连接Tinypng")
+        print("\(result.files.count)个图片排序完成，开始过滤掉已压缩...")
+        
+        let uncompressFiles = result.files.compactMap { (file) -> String? in
+            if tinyedFiles.contains(file) {
+                return nil
+            }
+            return file
+        }
+        
+        guard uncompressFiles.count > 0 else {
+            print("没有发现可以压缩的图片...")
+            return
+        }
+        
+        print("\(uncompressFiles.count)个图片需要压缩，开始连接Tinypng...")
         
         var keyIndex: Int = 0
         var fileIndex: Int = 0
         
-        let totalCount = result.files.count
+        let totalCount = uncompressFiles.count
         while fileIndex < totalCount {
-            let file = result.files[fileIndex]
+            let file = uncompressFiles[fileIndex]
             
             let progress = Double(fileIndex + 1) * 10000 / Double(totalCount) / 100.0
             guard !tinyedFiles.contains(file) else {
                 let progressString = String.init(format: "进度：%.2f%%", progress)
                 print("\(file)已压缩，跳过，\(progressString)...")
-                return
+                fileIndex += 1
+                continue
             }
             if keyIndex < keys.count {
                 let key = "api:" + keys[keyIndex]
@@ -70,7 +86,6 @@ class Tinypng {
                             self.tinyedFiles.append(file)
                         } else {
                             keyIndex += 1
-                            self.failedFiles.append(file)
                         }
                         self.semaphore.signal()
                     }
@@ -127,7 +142,7 @@ class Tinypng {
                     
                     try? data?.write(to: fileUrl, options: .atomic)
                     
-                    print("\(file) 压缩成功(\(ratio) \(progressString)\n", terminator: "")
+                    print("\(file) 压缩成功(\(ratio)) \(progressString)\n", terminator: "")
                     
                     completion(true)
                 })
