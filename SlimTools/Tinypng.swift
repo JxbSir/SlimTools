@@ -48,11 +48,12 @@ class Tinypng {
         print("\(result.files.count)个图片排序完成，开始连接Tinypng")
         
         result.files.enumerated().forEach { (offset, file) in
+            let progress = Double(offset + 1) * 10000 / Double(result.files.count) / 100.0
             guard !tinyedFiles.contains(file) else {
-                print("\(file)已压缩，跳过...")
+                let progressString = String.init(format: "进度：%.2f%%", progress)
+                print("\(file)已压缩，跳过，\(progressString)...")
                 return
             }
-            let progress = Double(offset + 1) * 10000 / Double(result.files.count) / 100.0
             if keyIndex < keys.count {
                 let key = "api:" + keys[keyIndex]
                 let keyData = key.data(using: String.Encoding.utf8)
@@ -74,7 +75,7 @@ class Tinypng {
     }
     
     private func upload(file: String, with key: String, progress: Double) {
-        let progressString = String.init(format: "进度：%.2f%%", progress)
+        let progressString = String(format: "进度：%.2f%%", progress)
         let fileUrl = URL(fileURLWithPath: file)
         let request = NSMutableURLRequest(url: URL(string: "https://api.tinify.com/shrink")!)
         request.httpMethod = "POST"
@@ -87,6 +88,7 @@ class Tinypng {
                 //上传成功
                 guard let allHeaderFields = httpResponse?.allHeaderFields, let location = allHeaderFields["Location"] as? String, let url = URL(string: location) else {
                     print("\(file) 上传失败 \(progressString)\n", terminator: "")
+                    self.keyIndex += 1
                     self.failedFiles.append(file)
                     self.semaphore.signal()
                     return

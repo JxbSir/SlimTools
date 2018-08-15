@@ -12,6 +12,8 @@ class FileHelper {
 
     static let shared = FileHelper()
     
+    private let filterDirNames = ["carthage","pods","qiyu","filter_file"]
+    
     private init() {
         
     }
@@ -25,7 +27,7 @@ class FileHelper {
         
         if let dirArray = try? fileManager.contentsOfDirectory(atPath: path) {
             dirArray.forEach { (name) in
-                guard name.lowercased() != "carthage", name.lowercased() != "pods", name.lowercased() != "qiyu" else {
+                guard !filterDirNames.contains(name.lowercased()) else {
                     return
                 }
                 let subpath = "\(path)/\(name)"
