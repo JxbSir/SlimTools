@@ -40,10 +40,6 @@ class Tinypng {
         }
     }
     
-    private func relativePath(_ file: String) -> String {
-        return file.replacingOccurrences(of: rootDirectory, with: "")
-    }
-    
     func start(dir: String) {
         self.rootDirectory = dir
         print("启动资源压缩，正在扫描目录...")
@@ -56,7 +52,7 @@ class Tinypng {
         print("\(result.files.count)个图片排序完成，开始过滤掉已压缩...")
         
         let uncompressFiles = result.files.compactMap { (file) -> String? in
-            if tinyedFiles.contains(relativePath(file)) {
+            if let md5 = MD5().md5(path: file), tinyedFiles.contains(md5) {
                 return nil
             }
             return file
@@ -83,7 +79,9 @@ class Tinypng {
                     self.upload(file: file, with: "Basic " + base64String, progress: progress) { (success) in
                         if success {
                             fileIndex += 1
-                            self.tinyedFiles.append(self.relativePath(file))
+                            if let md5 = MD5().md5(path: file) {
+                                self.tinyedFiles.append(md5)
+                            }
                         } else {
                             keyIndex += 1
                         }
