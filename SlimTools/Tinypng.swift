@@ -29,6 +29,8 @@ class Tinypng {
     
     private var failedFiles: [String] = []
     
+    private var rootDirectory: String = ""
+    
     init() {
         if FileManager.default.fileExists(atPath: tinyedFile), let handler = FileHandle(forReadingAtPath: tinyedFile) {
             let data = handler.readDataToEndOfFile()
@@ -38,7 +40,12 @@ class Tinypng {
         }
     }
     
+    private func relativePath(_ file: String) -> String {
+        return file.replacingOccurrences(of: rootDirectory, with: "")
+    }
+    
     func start(dir: String) {
+        self.rootDirectory = dir
         print("启动资源压缩，正在扫描目录...")
         
         let result = Sort().fetchSorted(dir: dir)
@@ -49,7 +56,7 @@ class Tinypng {
         print("\(result.files.count)个图片排序完成，开始过滤掉已压缩...")
         
         let uncompressFiles = result.files.compactMap { (file) -> String? in
-            if tinyedFiles.contains(file) {
+            if tinyedFiles.contains(relativePath(file)) {
                 return nil
             }
             return file
@@ -68,14 +75,7 @@ class Tinypng {
         let totalCount = uncompressFiles.count
         while fileIndex < totalCount {
             let file = uncompressFiles[fileIndex]
-            
             let progress = Double(fileIndex + 1) * 10000 / Double(totalCount) / 100.0
-            guard !tinyedFiles.contains(file) else {
-                let progressString = String.init(format: "进度：%.2f%%", progress)
-                print("\(file)已压缩，跳过，\(progressString)...")
-                fileIndex += 1
-                continue
-            }
             if keyIndex < keys.count {
                 let key = "api:" + keys[keyIndex]
                 let keyData = key.data(using: String.Encoding.utf8)
@@ -83,7 +83,7 @@ class Tinypng {
                     self.upload(file: file, with: "Basic " + base64String, progress: progress) { (success) in
                         if success {
                             fileIndex += 1
-                            self.tinyedFiles.append(file)
+                            self.tinyedFiles.append(self.relativePath(file))
                         } else {
                             keyIndex += 1
                         }
