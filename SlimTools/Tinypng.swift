@@ -7,6 +7,7 @@
 //
 
 import Cocoa
+import Foundation
 
 class Tinypng {
     
@@ -24,7 +25,6 @@ class Tinypng {
         "Tnl1vhHbyYxnOZCj8oHmdvCPcuDUbcf0d",
         "kaK1IRDXUQpAZeEL6KbGEjO8HAeqTQBhA"
     ]
-    private var keyIndex: Int = 0
     
     private var failedFiles: [String] = []
     
@@ -47,8 +47,14 @@ class Tinypng {
         }
         print("\(result.files.count)个图片排序完成，开始连接Tinypng")
         
-        result.files.enumerated().forEach { (offset, file) in
-            let progress = Double(offset + 1) * 10000 / Double(result.files.count) / 100.0
+        var keyIndex: Int = 0
+        var fileIndex: Int = 0
+        
+        let totalCount = result.files.count
+        while fileIndex < totalCount {
+            let file = result.files[fileIndex]
+            
+            let progress = Double(fileIndex + 1) * 10000 / Double(totalCount) / 100.0
             guard !tinyedFiles.contains(file) else {
                 let progressString = String.init(format: "进度：%.2f%%", progress)
                 print("\(file)已压缩，跳过，\(progressString)...")
@@ -58,15 +64,23 @@ class Tinypng {
                 let key = "api:" + keys[keyIndex]
                 let keyData = key.data(using: String.Encoding.utf8)
                 if let base64String = keyData?.base64EncodedString() {
-                    self.upload(file: file, with: "Basic " + base64String, progress: progress)
+                    self.upload(file: file, with: "Basic " + base64String, progress: progress) { (success) in
+                        if success {
+                            fileIndex += 1
+                            self.tinyedFiles.append(file)
+                        } else {
+                            keyIndex += 1
+                            self.failedFiles.append(file)
+                        }
+                        self.semaphore.signal()
+                    }
                     _ = self.semaphore.wait(timeout: DispatchTime.distantFuture)
                 }
             } else {
                 print("key 用完了")
             }
-            
         }
-        
+  
         let progress = Double(result.files.count - failedFiles.count) * 10000 / Double(result.files.count) / 100
         let log = String(format: "所有图片压缩完毕，成功率：%.2f%%", progress)
         print("\(log)")
@@ -74,7 +88,7 @@ class Tinypng {
         self.tinyed()
     }
     
-    private func upload(file: String, with key: String, progress: Double) {
+    private func upload(file: String, with key: String, progress: Double, completion: @escaping (Bool) -> Void) {
         let progressString = String(format: "进度：%.2f%%", progress)
         let fileUrl = URL(fileURLWithPath: file)
         let request = NSMutableURLRequest(url: URL(string: "https://api.tinify.com/shrink")!)
@@ -87,41 +101,41 @@ class Tinypng {
             if error == nil {
                 //上传成功
                 guard let allHeaderFields = httpResponse?.allHeaderFields, let location = allHeaderFields["Location"] as? String, let url = URL(string: location) else {
-                    print("\(file) 上传失败 \(progressString)\n", terminator: "")
-                    self.keyIndex += 1
-                    self.failedFiles.append(file)
-                    self.semaphore.signal()
+                    print("\(file) 上传失败，切换Api Key\n", terminator: "")
+                    completion(false)
                     return
+                }
+                
+                var ratio: String = "压缩率：0%"
+                if let data = data,
+                    let result = try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.allowFragments) as? [String: Any],
+                    let output = result?["output"] as? [String: Any],
+                    let _ratio = output["ratio"] as? Double  {
+                    ratio = String(format: "压缩率：%.2f%%", _ratio * 100)
                 }
                 
                 let requestCompress = NSMutableURLRequest(url: url)
                 requestCompress.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
                 requestCompress.setValue(key, forHTTPHeaderField: "Authorization")
                 let taskCompress = URLSession.shared.dataTask(with: requestCompress as URLRequest, completionHandler: { (data, respinse, error) in
-                    
-                    defer {
-                        self.semaphore.signal()
-                    }
-                    
+
                     guard error == nil else {
-                        print("\(file) 压缩失败 \(progressString)\n", terminator: "")
-                        self.failedFiles.append(file)
+                        completion(false)
+                        print("\(file) 压缩失败 切换ApiKey\n", terminator: "")
                         return
                     }
                     
                     try? data?.write(to: fileUrl, options: .atomic)
                     
-                    self.tinyedFiles.append(file)
+                    print("\(file) 压缩成功(\(ratio) \(progressString)\n", terminator: "")
                     
-                    print("\(file) 压缩成功 \(progressString)\n", terminator: "")
+                    completion(true)
                 })
                 taskCompress.resume()
                 
             } else {
-                self.failedFiles.append(file)
-                print("上传失败可能超过限制，切换Api Key \(progressString)\n", terminator: "")
-                self.keyIndex += 1
-                self.semaphore.signal()
+                print("上传失败可能超过限制，切换Api Key\n", terminator: "")
+                completion(false)
             }
         })
         task.resume()
